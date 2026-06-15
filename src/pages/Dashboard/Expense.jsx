@@ -4,6 +4,7 @@ import DeleteAlert from "../../component/DeleteAlert";
 import AddExpenseForm from "../../component/Expense/AddExpenseForm";
 import ExpenseList from "../../component/Expense/ExpenseList";
 import ExpenseOverview from "../../component/Expense/ExpenseOverview";
+import LoadingSpinner from "../../component/LoadingSpinner";
 import DashboardLayout from "../../component/layout/DashboardLayout";
 import Modal from "../../component/Modal";
 import { useWorkspace } from "../../context/WorkspaceContext";
@@ -15,6 +16,10 @@ const Expense = () => {
     useUserAuth()
     const { currentWorkspace } = useWorkspace();
     const [openAddExpenseModal, setOpenAddExpenseModal] = useState(false);
+    const [openEditExpenseModal, setOpenEditExpenseModal] = useState({
+        show: false,
+        data: null,
+    });
     const [expenseData, setExpenseData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [openDeleteAlert, setOpenDeleteAlert] = useState({
@@ -87,6 +92,54 @@ const Expense = () => {
             toast.error(error.response?.data?.message || "খরচের তথ্য যোগ করা যায়নি");
         }
     };
+
+    const handleUpdateExpense = async (expense) => {
+        const workspaceId =
+            currentWorkspace?._id ||
+            currentWorkspace?.id ||
+            currentWorkspace?.companyId;
+        const { expenseTypeId, amount, date } = expense;
+
+        if (!openEditExpenseModal.data?._id) {
+            toast.error("খরচের তথ্য পাওয়া যায়নি");
+            return;
+        }
+        if (!expenseTypeId?.trim()) {
+            toast.error("খরচের ধরন নির্বাচন করুন");
+            return;
+        }
+        if (!workspaceId) {
+            toast.error("ওয়ার্কস্পেস নির্বাচন করুন");
+            return;
+        }
+        if (!amount || isNaN(amount) || Number(amount) <= 0) {
+            toast.error("সঠিক পরিমাণ লিখুন");
+            return;
+        }
+        if (!date) {
+            toast.error("তারিখ নির্বাচন করুন");
+            return;
+        }
+
+        try {
+            await axiosInstance.put(API_PATHS.EXPENSE.UPDATE_EXPENSE(openEditExpenseModal.data._id), {
+                expenseTypeId,
+                amount,
+                date,
+                workspaceId,
+            });
+            setOpenEditExpenseModal({ show: false, data: null });
+            toast.success("খরচের তথ্য সফলভাবে আপডেট হয়েছে");
+            fetchExpenseDetails();
+        } catch (error) {
+            console.error("Error updating expense:", error);
+            if ([404, 405].includes(error.response?.status)) {
+                toast.error("খরচের আপডেট API পাওয়া যায়নি। backend চালু/ডিপ্লয় করুন");
+                return;
+            }
+            toast.error(error.response?.data?.message || "খরচের তথ্য আপডেট করা যায়নি");
+        }
+    };
     // handle delete expense details
     const deleteExpense = async (id) => {
         try {
@@ -138,16 +191,25 @@ const Expense = () => {
         <DashboardLayout activeMenu="ব্যয়">
             <div className="my-5 mx-auto ">
                 <div className="grid grid-cols-1 gap-6">
-                    <ExpenseOverview transactions={expenseData}
-                        onExpenseIncome={() => setOpenAddExpenseModal(true)}
-                    />
-                    <ExpenseList
-                        transactions={expenseData}
-                        onDelete={(id) => {
-                            setOpenDeleteAlert({ show: true, data: id });
-                        }}
-                        onDownload={handleDownloadExpenseDetails}
-                    />
+                    {loading ? (
+                        <LoadingSpinner message="খরচের তথ্য লোড হচ্ছে..." />
+                    ) : (
+                        <>
+                            <ExpenseOverview transactions={expenseData}
+                                onExpenseIncome={() => setOpenAddExpenseModal(true)}
+                            />
+                            <ExpenseList
+                                transactions={expenseData}
+                                onEdit={(expense) => {
+                                    setOpenEditExpenseModal({ show: true, data: expense });
+                                }}
+                                onDelete={(id) => {
+                                    setOpenDeleteAlert({ show: true, data: id });
+                                }}
+                                onDownload={handleDownloadExpenseDetails}
+                            />
+                        </>
+                    )}
                 </div>
 
 
@@ -156,7 +218,17 @@ const Expense = () => {
                     onClose={() => setOpenAddExpenseModal(false)}
                     title="ব্যয় যোগ করুন"
                 >
-                    <AddExpenseForm onAddExpense={handleAddExpense}
+                    <AddExpenseForm onAddExpense={handleAddExpense} submitLabel="ব্যয় যোগ করুন" />
+                </Modal>
+                <Modal
+                    isOpen={openEditExpenseModal.show}
+                    onClose={() => setOpenEditExpenseModal({ show: false, data: null })}
+                    title="ব্যয় এডিট করুন"
+                >
+                    <AddExpenseForm
+                        onAddExpense={handleUpdateExpense}
+                        initialData={openEditExpenseModal.data}
+                        submitLabel="ব্যয় আপডেট করুন"
                     />
                 </Modal>
                 <Modal

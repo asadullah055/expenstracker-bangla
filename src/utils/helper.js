@@ -34,6 +34,15 @@ export const formatBanglaDayMonth = (date) => {
     month: "short",
   }).format(new Date(date));
 };
+
+export const formatBanglaMonthYear = (date) => {
+  if (!date) return "";
+  return new Intl.DateTimeFormat("bn-BD", {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(date));
+};
+
 export const prepareExpenseBarChartData = (data = []) => {
   const chartData = data.map((item) => ({
     category: item?.category,
@@ -46,12 +55,22 @@ export const prepareIncomeBarChartData = (data = []) => {
   const sortedData = [...data].sort(
     (a, b) => new Date(a.date) - new Date(b.date),
   );
-  const chartData = sortedData.map((item) => ({
-    month: formatBanglaDayMonth(item?.date),
-    amount: item?.amount,
-    category: item?.category,
-  }));
-  return chartData;
+  const monthlyIncome = sortedData.reduce((acc, item) => {
+    const date = new Date(item?.date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        month: formatBanglaMonthYear(item?.date),
+        amount: 0,
+      };
+    }
+
+    acc[monthKey].amount += Number(item?.amount) || 0;
+    return acc;
+  }, {});
+
+  return Object.values(monthlyIncome);
 };
 
 export const prepareExpenseLineChartData = (data = []) => { 

@@ -4,6 +4,7 @@ import DeleteAlert from "../../component/DeleteAlert";
 import AddIncomeForm from "../../component/Income/AddIncomeForm";
 import IncomeList from "../../component/Income/IncomeList";
 import IncomeOverview from "../../component/Income/IncomeOverview";
+import LoadingSpinner from "../../component/LoadingSpinner";
 import DashboardLayout from "../../component/layout/DashboardLayout";
 import Modal from "../../component/Modal";
 import { useWorkspace } from "../../context/WorkspaceContext";
@@ -15,6 +16,10 @@ const Income = () => {
     useUserAuth()
     const { currentWorkspace } = useWorkspace();
     const [openAddIncomeModal, setOpenAddIncomeModal] = useState(false);
+    const [openEditIncomeModal, setOpenEditIncomeModal] = useState({
+        show: false,
+        data: null,
+    });
     const [incomeData, setIncomeData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [openDeleteAlert, setOpenDeleteAlert] = useState({
@@ -56,7 +61,7 @@ const Income = () => {
             currentWorkspace?.id ||
             currentWorkspace?.companyId;
         const { amount, date, incomeTypeId } = income;
-        if (!incomeTypeId.trim()) {
+        if (!incomeTypeId?.trim()) {
             toast.error("আয়ের ধরন নির্বাচন করুন");
             return;
         }
@@ -86,6 +91,54 @@ const Income = () => {
         } catch (error) {
             console.error("Error adding income:", error);
             toast.error(error.response?.data?.message || "আয়ের তথ্য যোগ করা যায়নি");
+        }
+    };
+
+    const handleUpdateIncome = async (income) => {
+        const workspaceId =
+            currentWorkspace?._id ||
+            currentWorkspace?.id ||
+            currentWorkspace?.companyId;
+        const { amount, date, incomeTypeId } = income;
+
+        if (!openEditIncomeModal.data?._id) {
+            toast.error("আয়ের তথ্য পাওয়া যায়নি");
+            return;
+        }
+        if (!incomeTypeId?.trim()) {
+            toast.error("আয়ের ধরন নির্বাচন করুন");
+            return;
+        }
+        if (!workspaceId) {
+            toast.error("ওয়ার্কস্পেস নির্বাচন করুন");
+            return;
+        }
+        if (!amount || isNaN(amount) || Number(amount) <= 0) {
+            toast.error("সঠিক পরিমাণ লিখুন");
+            return;
+        }
+        if (!date) {
+            toast.error("তারিখ নির্বাচন করুন");
+            return;
+        }
+
+        try {
+            await axiosInstance.put(API_PATHS.INCOME.UPDATE_INCOME(openEditIncomeModal.data._id), {
+                incomeTypeId,
+                amount,
+                date,
+                workspaceId,
+            });
+            setOpenEditIncomeModal({ show: false, data: null });
+            toast.success("আয়ের তথ্য সফলভাবে আপডেট হয়েছে");
+            fetchIncomeDetails();
+        } catch (error) {
+            console.error("Error updating income:", error);
+            if ([404, 405].includes(error.response?.status)) {
+                toast.error("আয়ের আপডেট API পাওয়া যায়নি। backend চালু/ডিপ্লয় করুন");
+                return;
+            }
+            toast.error(error.response?.data?.message || "আয়ের তথ্য আপডেট করা যায়নি");
         }
     };
     // Delete Income
@@ -140,24 +193,44 @@ const Income = () => {
         <DashboardLayout activeMenu="আয়">
             <div className="my-5 mx-auto ">
                 <div className="grid grid-cols-1 gap-6">
-                    <div className=""><IncomeOverview
-                        transactions={incomeData}
-                        onAddIncome={() => setOpenAddIncomeModal(true)}
-                    /></div>
-                    <IncomeList
-                        transactions={incomeData}
-                        onDelete={(id) => {
-                            setOpenDeleteAlert({ show: true, data: id });
-                        }}
-                        onDownload={handleDownloadIncomeDetails}
-                    />
+                    {loading ? (
+                        <LoadingSpinner message="আয়ের তথ্য লোড হচ্ছে..." />
+                    ) : (
+                        <>
+                            <div className=""><IncomeOverview
+                                transactions={incomeData}
+                                onAddIncome={() => setOpenAddIncomeModal(true)}
+                            /></div>
+                            <IncomeList
+                                transactions={incomeData}
+                                onEdit={(income) => {
+                                    setOpenEditIncomeModal({ show: true, data: income });
+                                }}
+                                onDelete={(id) => {
+                                    setOpenDeleteAlert({ show: true, data: id });
+                                }}
+                                onDownload={handleDownloadIncomeDetails}
+                            />
+                        </>
+                    )}
                 </div>
                 <Modal
                     isOpen={openAddIncomeModal}
                     onClose={() => setOpenAddIncomeModal(false)}
                     title="আয় যোগ করুন"
                 >
-                    <AddIncomeForm onAddIncome={handleAddIncome} />
+                    <AddIncomeForm onAddIncome={handleAddIncome} submitLabel="আয় যোগ করুন" />
+                </Modal>
+                <Modal
+                    isOpen={openEditIncomeModal.show}
+                    onClose={() => setOpenEditIncomeModal({ show: false, data: null })}
+                    title="আয় এডিট করুন"
+                >
+                    <AddIncomeForm
+                        onAddIncome={handleUpdateIncome}
+                        initialData={openEditIncomeModal.data}
+                        submitLabel="আয় আপডেট করুন"
+                    />
                 </Modal>
                 <Modal
                     isOpen={openDeleteAlert.show}

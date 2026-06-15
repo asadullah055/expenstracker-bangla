@@ -1,7 +1,7 @@
-import { LuTrash2, LuTrendingDown, LuTrendingUp, LuUtensils } from "react-icons/lu";
+import { LuPencil, LuTrash2, LuTrendingDown, LuTrendingUp, LuUtensils } from "react-icons/lu";
 import { addThousandSeparator } from "../../utils/helper";
 
-const TransactionCard = ({ title, icon, date, amount, type, hideDeleteBtn, onDelete }) => {
+const TransactionCard = ({ title, icon, date, amount, type, hideDeleteBtn, onDelete, onEdit }) => {
     const getAmountStyles = () => {
         return type === "income" ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500";
     }
@@ -9,7 +9,7 @@ const TransactionCard = ({ title, icon, date, amount, type, hideDeleteBtn, onDel
         // Handle delete action here
     } */
     return (
-        <div className='group relative flex items-center gap-4 mt-2 p-3 rounded-lg hover:bg-gray-100/60'>
+        <div className='group relative flex items-center gap-4 mt-2 p-3 rounded-lg border border-gray-200 bg-white shadow-sm transition hover:bg-gray-50 hover:shadow-md'>
             <div className="w-12 h-12 flex items-center justify-center text-xl text-gray-800 bg-gray-100 rounded-full ">
                 {
                     icon ? (
@@ -25,6 +25,16 @@ const TransactionCard = ({ title, icon, date, amount, type, hideDeleteBtn, onDel
                     <p className="text-xs text-gray-400 mt-1">{date}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    {onEdit && (
+                        <button
+                            className="text-gray-400 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            onClick={onEdit}
+                            title="Edit"
+                            aria-label="Edit transaction"
+                        >
+                            <LuPencil />
+                        </button>
+                    )}
                     {!hideDeleteBtn && (
                         <button className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={onDelete}><LuTrash2 /></button>
                     )}

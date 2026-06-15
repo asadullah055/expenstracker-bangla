@@ -2,7 +2,7 @@ import { LuDownload } from "react-icons/lu";
 import TransactionCard from "../Cards/TransactionCard";
 import { formatBanglaDate } from "../../utils/helper";
 
-const ExpenseList = ({ transactions, onDelete, onDownload }) => {
+const ExpenseList = ({ transactions, onDelete, onEdit, onDownload }) => {
     return (
         <div className="card">
             <div className="flex items-center justify-between">
@@ -12,7 +12,7 @@ const ExpenseList = ({ transactions, onDelete, onDownload }) => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {transactions?.map((expense) => (
                     <TransactionCard
                         key={expense._id}
@@ -21,6 +21,7 @@ const ExpenseList = ({ transactions, onDelete, onDownload }) => {
                         date={formatBanglaDate(expense.date)}
                         amount={expense.amount}
                         type="expense"
+                        onEdit={onEdit ? () => onEdit(expense) : undefined}
                         onDelete={() => onDelete(expense._id)}
                     />
                 ))}

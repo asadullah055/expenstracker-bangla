@@ -1,6 +1,10 @@
 // utils/apiPaths.js
-// export const BASE_URL = "http://localhost:8000";
-export const BASE_URL = "https://expensetracker-bangla-server.vercel.app";
+const LOCAL_BASE_URL = "http://localhost:8000";
+const PRODUCTION_BASE_URL = "https://expensetracker-bangla-server.vercel.app";
+
+export const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? LOCAL_BASE_URL : PRODUCTION_BASE_URL);
 export const API_PATHS = {
   AUTH: {
     LOGIN: "/api/v1/auth/login",
@@ -14,12 +18,14 @@ export const API_PATHS = {
   INCOME: {
     ADD_INCOME: "/api/v1/income/add",
     GET_ALL_INCOME: "/api/v1/income/get",
+    UPDATE_INCOME: (incomeId) => `/api/v1/income/${incomeId}`,
     DELETE_INCOME: (incomeId) => `/api/v1/income/${incomeId}`,
     DOWNLOAD_INCOME: `/api/v1/income/downloadexcel`,
   },
   EXPENSE: {
     ADD_EXPENSE: "/api/v1/expense/add",
     GET_ALL_EXPENSE: "/api/v1/expense/get",
+    UPDATE_EXPENSE: (expenseId) => `/api/v1/expense/${expenseId}`,
     DELETE_EXPENSE: (expenseId) => `/api/v1/expense/${expenseId}`,
     DOWNLOAD_EXPENSE: `/api/v1/expense/downloadexcel`,
   },

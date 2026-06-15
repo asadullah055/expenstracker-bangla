@@ -5,7 +5,17 @@ import { API_PATHS } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
 import Inputs from "../Inputes/Inputs";
 
-const AddIncomeForm = ({ onAddIncome }) => {
+const toDateInputValue = (date) => {
+    if (!date) return "";
+    return new Date(date).toISOString().slice(0, 10);
+};
+
+const getIncomeTypeId = (incomeTypeId) => {
+    if (!incomeTypeId) return "";
+    return typeof incomeTypeId === "string" ? incomeTypeId : incomeTypeId._id || "";
+};
+
+const AddIncomeForm = ({ onAddIncome, initialData = null, submitLabel = "Save" }) => {
     const { currentWorkspace } = useWorkspace();
 
     const [loading, setLoading] = useState(false)
@@ -75,6 +85,26 @@ const AddIncomeForm = ({ onAddIncome }) => {
     useEffect(() => {
         fetchIncomeType();
     }, [workspaceTypeLabel])
+
+    useEffect(() => {
+        const selectedTypeId = getIncomeTypeId(initialData?.incomeTypeId);
+
+        setIncome({
+            incomeTypeId: selectedTypeId,
+            amount: initialData?.amount ?? "",
+            date: toDateInputValue(initialData?.date),
+        });
+
+        if (!initialData) {
+            setSelectedIncomeType(null);
+            return;
+        }
+
+        setSelectedIncomeType(
+            incomeType.find((type) => type._id === selectedTypeId) ||
+            (typeof initialData.incomeTypeId === "object" ? initialData.incomeTypeId : null)
+        );
+    }, [initialData, incomeType])
 
     return (
         <div>
@@ -153,7 +183,7 @@ const AddIncomeForm = ({ onAddIncome }) => {
                     className='add-btn add-btn-fill'
                     onClick={() => onAddIncome(income)}
                 >
-                    আয় যোগ করুন
+                    {submitLabel}
                 </button>
             </div>
 

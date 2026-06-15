@@ -5,7 +5,17 @@ import { API_PATHS } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
 import Inputs from "../Inputes/Inputs";
 
-const AddExpenseForm = ({ onAddExpense }) => {
+const toDateInputValue = (date) => {
+    if (!date) return "";
+    return new Date(date).toISOString().slice(0, 10);
+};
+
+const getExpenseTypeId = (expenseTypeId) => {
+    if (!expenseTypeId) return "";
+    return typeof expenseTypeId === "string" ? expenseTypeId : expenseTypeId._id || "";
+};
+
+const AddExpenseForm = ({ onAddExpense, initialData = null, submitLabel = "Save" }) => {
     const { currentWorkspace } = useWorkspace();
 
     const [loading, setLoading] = useState(false);
@@ -68,6 +78,26 @@ const AddExpenseForm = ({ onAddExpense }) => {
     useEffect(() => {
         fetchExpenseType();
     }, [workspaceTypeLabel]);
+
+    useEffect(() => {
+        const selectedTypeId = getExpenseTypeId(initialData?.expenseTypeId);
+
+        setExpense({
+            expenseTypeId: selectedTypeId,
+            amount: initialData?.amount ?? "",
+            date: toDateInputValue(initialData?.date),
+        });
+
+        if (!initialData) {
+            setSelectedExpenseType(null);
+            return;
+        }
+
+        setSelectedExpenseType(
+            expenseType.find((type) => type._id === selectedTypeId) ||
+            (typeof initialData.expenseTypeId === "object" ? initialData.expenseTypeId : null)
+        );
+    }, [initialData, expenseType]);
 
     return (
         <div>
@@ -132,7 +162,7 @@ const AddExpenseForm = ({ onAddExpense }) => {
                     className="add-btn add-btn-fill"
                     onClick={() => onAddExpense(expense)}
                 >
-                    ব্যয় যোগ করুন
+                    {submitLabel}
                 </button>
             </div>
         </div>

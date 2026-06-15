@@ -2,7 +2,7 @@ import { LuDownload } from 'react-icons/lu';
 import TransactionCard from './../Cards/TransactionCard';
 import { formatBanglaDate } from '../../utils/helper';
 
-const IncomeList = ({ transactions, onDelete, onDownload }) => {
+const IncomeList = ({ transactions, onDelete, onEdit, onDownload }) => {
   
     return (
         <div className="card">
@@ -12,7 +12,7 @@ const IncomeList = ({ transactions, onDelete, onDownload }) => {
                     <LuDownload className="text-base" /> ডাউনলোড
                 </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {transactions?.map((income) => (
                     <TransactionCard
                         key={income._id}
@@ -21,6 +21,7 @@ const IncomeList = ({ transactions, onDelete, onDownload }) => {
                         date={formatBanglaDate(income.date)}
                         amount={income.amount}
                         type="income"
+                        onEdit={onEdit ? () => onEdit(income) : undefined}
                         onDelete={() => onDelete(income._id)}
                     />
                 ))}
